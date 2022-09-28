@@ -19,6 +19,7 @@ set(passes_SOURCES
   AlignmentLowering.cpp
   Asyncify.cpp
   AvoidReinterprets.cpp
+  Canonicalize.cpp
   CoalesceLocals.cpp
   CodePushing.cpp
   CodeFolding.cpp

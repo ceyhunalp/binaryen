@@ -25,6 +25,7 @@ class Pass;
 Pass* createAlignmentLoweringPass();
 Pass* createAsyncifyPass();
 Pass* createAvoidReinterpretsPass();
+Pass* createCanonicalizePass();
 Pass* createCoalesceLocalsPass();
 Pass* createCoalesceLocalsWithLearningPass();
 Pass* createCodeFoldingPass();

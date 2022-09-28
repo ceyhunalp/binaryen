@@ -100,6 +100,9 @@ void PassRegistry::registerPasses() {
                "removes arguments to calls in an lto-like manner, and "
                "optimizes where we removed",
                createDAEOptimizingPass);
+  registerPass("canon",
+               "instrument the wasm to canonicalize NaNs at runtime",
+               createCanonicalizePass);
   registerPass("coalesce-locals",
                "reduce # of locals by coalescing",
                createCoalesceLocalsPass);
@@ -535,6 +538,8 @@ void PassRunner::addDefaultFunctionOptimizationPasses() {
   } else {
     addIfNoDWARFIssues("precompute");
   }
+  // Cey change: Add NaN canonicalization
+  //addIfNoDWARFIssues("denan");
   addIfNoDWARFIssues("optimize-instructions");
   if (options.optimizeLevel >= 2 || options.shrinkLevel >= 1) {
     addIfNoDWARFIssues(
