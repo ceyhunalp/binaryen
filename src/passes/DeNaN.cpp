@@ -36,8 +36,8 @@ struct DeNaN : public WalkerPass<
   Name deNan32, deNan64;
 
   void visitExpression(Expression* expr) {
-    std::cout << "Expression (before)" << std::endl;
-    expr->dump();
+//    std::cout << "Expression (before)" << std::endl;
+//    expr->dump();
     // If the expression returns a floating-point value, ensure it is not a
     // NaN. If we can do this at compile time, do it now, which is useful for
     // initializations of global (which we can't do a function call in). Note
@@ -69,8 +69,8 @@ struct DeNaN : public WalkerPass<
       }
     }
     if (replacement) {
-      std::cout << "Replacement (after)" << std::endl;
-      replacement->dump();
+//      std::cout << "Replacement (after)" << std::endl;
+//      replacement->dump();
       // We can't do this outside of a function, like in a global initializer,
       // where a call would be illegal.
       if (replacement->is<Const>() || getFunction()) {

@@ -538,8 +538,6 @@ void PassRunner::addDefaultFunctionOptimizationPasses() {
   } else {
     addIfNoDWARFIssues("precompute");
   }
-  // Cey change: Add NaN canonicalization
-  //addIfNoDWARFIssues("denan");
   addIfNoDWARFIssues("optimize-instructions");
   if (options.optimizeLevel >= 2 || options.shrinkLevel >= 1) {
     addIfNoDWARFIssues(

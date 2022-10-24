@@ -7,37 +7,35 @@
 
 namespace wasm{
 
+const int i = 1;
+#define is_bigendian() ( (*(char*)&i) == 0 )
+
 struct Canonicalize : public WalkerPass<ControlFlowWalker<Canonicalize, UnifiedExpressionVisitor<Canonicalize>>> {
 
   Name canon32, canon64;
 
   void visitStore(Store* curr) {
-    curr->dump();
     Builder builder(*getModule());
-//    Expression* replacement = nullptr;
     bool replacement = false;
     if (curr->value->type == Type::f32) {
       curr->value = builder.makeCall(canon32, {curr->value}, Type::f32);
       replacement = true;
-//      replacement = builder.makeCall(canon_store_f32, {curr}, curr->value->type);
     } else if (curr->value->type == Type::f64) {
       curr->value = builder.makeCall(canon64, {curr->value}, Type::f64);
       replacement = true;
-//      replacement = builder.makeCall(canon_store_f64, {curr}, curr->value->type);
     }
     if (replacement) {
-      std::cout << "Replacement (after)" << std::endl;
-      curr->dump();
       if (getFunction()) {
         replaceCurrent(curr);
       } else {
         std::cout << "warning: cannot de-nan outside of function context\n";
       }
     }
-    curr->dump();
   }
 
   void doWalkModule(Module* module) {
+    float canon_f;
+    double canon_d;
     // Pick names for the helper functions.
     canon32 = Names::getValidFunctionName(*module, "canon32");
     canon64 = Names::getValidFunctionName(*module, "canon64");
@@ -67,45 +65,22 @@ struct Canonicalize : public WalkerPass<ControlFlowWalker<Canonicalize, UnifiedE
         builder.makeConst(literal));
       module->addFunction(std::move(func));
     };
-    add(canon32, Type::f32, Literal(float(0)), EqFloat32);
-    add(canon64, Type::f64, Literal(double(0)), EqFloat64);
+
+    if (is_bigendian()) {
+      unsigned char float_bytes[] = {0x7f, 0xc0, 0x00, 0x00};
+      unsigned char double_bytes[] = {0x7f, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+      memcpy(&canon_f, float_bytes, sizeof(float));
+      memcpy(&canon_d, double_bytes, sizeof(double));
+    } else {
+      unsigned char float_bytes[] = {0x00, 0x00, 0xc0, 0x7f};
+      unsigned char double_bytes[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x7f};
+      memcpy(&canon_f, float_bytes, sizeof(float));
+      memcpy(&canon_d, double_bytes, sizeof(double));
+    }
+    add(canon32, Type::f32, Literal(canon_f), EqFloat32);
+    add(canon64, Type::f64, Literal(canon_d), EqFloat64);
   }
 
-//  void visitStore(Store* curr) {
-////    Builder builder(*getModule());
-////    printf("value type\n");
-////    std::cout << curr->valueType.toString();
-////    std::cout << "=====";
-//    switch (curr->value->type.getBasic()) {
-////      case Type::f32:
-////        printf("Type is f32\n");
-////        break;
-//      case Type::f64: {
-////        curr->dump();
-////        printf("PTR DUMP\n");
-////        curr->ptr->dump();
-////        printf("VALUE DUMP\n");
-////        curr->value->dump();
-//        auto* c = curr->value->dynCast<LocalGet>();
-//        if (c) {
-//          seenIndexes.insert(c->index);
-//          printf("Inserting index: %d\n", c->index);
-//          std::cout << "----" << std::endl;
-////          printf("Current expression:\n");
-//        }
-//        break;}
-//      default:
-//        return;
-//    }
-//  }
-
-//private:
-//  void addImport(Module* curr, Name name, Type params, Type results) {
-//    auto import = Builder::makeFunction(name, Signature(params, results), {});
-//    import->module = ENV;
-//    import->base = name;
-//    curr->addFunction(std::move(import));
-//  }
 };
 
 Pass* createCanonicalizePass() { return new Canonicalize(); }
