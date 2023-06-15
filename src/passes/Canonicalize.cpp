@@ -10,6 +10,11 @@ namespace wasm{
 const int i = 1;
 #define is_bigendian() ( (*(char*)&i) == 0 )
 
+const unsigned char f32_bytes_big[] = {0x7f, 0xc0, 0x00, 0x00};
+const unsigned char f64_bytes_big[] = {0x7f, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+const unsigned char f32_bytes_lt[] = {0x00, 0x00, 0xc0, 0x7f};
+const unsigned char f64_bytes_lt[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x7f};
+
 struct Canonicalize : public WalkerPass<ControlFlowWalker<Canonicalize, UnifiedExpressionVisitor<Canonicalize>>> {
 
   Name canon32, canon64;
@@ -34,8 +39,8 @@ struct Canonicalize : public WalkerPass<ControlFlowWalker<Canonicalize, UnifiedE
   }
 
   void doWalkModule(Module* module) {
-    float canon_f;
-    double canon_d;
+    float canon_f32;
+    double canon_f64;
     // Pick names for the helper functions.
     canon32 = Names::getValidFunctionName(*module, "canon32");
     canon64 = Names::getValidFunctionName(*module, "canon64");
@@ -67,18 +72,20 @@ struct Canonicalize : public WalkerPass<ControlFlowWalker<Canonicalize, UnifiedE
     };
 
     if (is_bigendian()) {
-      unsigned char float_bytes[] = {0x7f, 0xc0, 0x00, 0x00};
-      unsigned char double_bytes[] = {0x7f, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-      memcpy(&canon_f, float_bytes, sizeof(float));
-      memcpy(&canon_d, double_bytes, sizeof(double));
+      std::cout << "big endian\n";
+      memcpy(&canon_f32, f32_bytes_big, sizeof(float));
+      memcpy(&canon_f64, f64_bytes_big, sizeof(double));
+//      canon_f32 = -1;
+//      canon_f64 = -1;
     } else {
-      unsigned char float_bytes[] = {0x00, 0x00, 0xc0, 0x7f};
-      unsigned char double_bytes[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x7f};
-      memcpy(&canon_f, float_bytes, sizeof(float));
-      memcpy(&canon_d, double_bytes, sizeof(double));
+      std::cout << "little endian\n";
+      memcpy(&canon_f32, f32_bytes_lt, sizeof(float));
+      memcpy(&canon_f64, f64_bytes_lt, sizeof(double));
+//      canon_f32 = -2;
+//      canon_f64 = -2;
     }
-    add(canon32, Type::f32, Literal(canon_f), EqFloat32);
-    add(canon64, Type::f64, Literal(canon_d), EqFloat64);
+    add(canon32, Type::f32, Literal(canon_f32), EqFloat32);
+    add(canon64, Type::f64, Literal(canon_f64), EqFloat64);
   }
 
 };

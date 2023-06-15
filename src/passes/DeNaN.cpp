@@ -30,14 +30,22 @@
 
 namespace wasm {
 
+const int j = 1;
+#define is_bigendian() ( (*(char*)&j) == 0 )
+
+const unsigned char f32_bytes_big[] = {0x7f, 0xc0, 0x00, 0x00};
+const unsigned char f64_bytes_big[] = {0x7f, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+const unsigned char f32_bytes_lt[] = {0x00, 0x00, 0xc0, 0x7f};
+const unsigned char f64_bytes_lt[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x7f};
+
 struct DeNaN : public WalkerPass<
                  ControlFlowWalker<DeNaN, UnifiedExpressionVisitor<DeNaN>>> {
 
   Name deNan32, deNan64;
 
   void visitExpression(Expression* expr) {
-//    std::cout << "Expression (before)" << std::endl;
-//    expr->dump();
+    float denan_f32;
+    double denan_f64;
     // If the expression returns a floating-point value, ensure it is not a
     // NaN. If we can do this at compile time, do it now, which is useful for
     // initializations of global (which we can't do a function call in). Note
@@ -57,20 +65,32 @@ struct DeNaN : public WalkerPass<
     auto* c = expr->dynCast<Const>();
     if (expr->type == Type::f32) {
       if (c && c->value.isNaN()) {
-        replacement = builder.makeConst(float(0));
+        if (is_bigendian()) {
+          std::cout << "big endian\n";
+          memcpy(&denan_f32, f32_bytes_big, sizeof(float));
+        } else {
+          std::cout << "little endian\n";
+          memcpy(&denan_f32, f32_bytes_lt, sizeof(float));
+        }
+//        replacement = builder.makeConst(float(0));
       } else {
         replacement = builder.makeCall(deNan32, {expr}, Type::f32);
       }
     } else if (expr->type == Type::f64) {
       if (c && c->value.isNaN()) {
-        replacement = builder.makeConst(double(0));
+        if (is_bigendian()) {
+          std::cout << "big endian\n";
+          memcpy(&denan_f64, f64_bytes_big, sizeof(float));
+        } else {
+          std::cout << "little endian\n";
+          memcpy(&denan_f64, f64_bytes_lt, sizeof(float));
+        }
+//        replacement = builder.makeConst(double(0));
       } else {
         replacement = builder.makeCall(deNan64, {expr}, Type::f64);
       }
     }
     if (replacement) {
-//      std::cout << "Replacement (after)" << std::endl;
-//      replacement->dump();
       // We can't do this outside of a function, like in a global initializer,
       // where a call would be illegal.
       if (replacement->is<Const>() || getFunction()) {
@@ -114,6 +134,8 @@ struct DeNaN : public WalkerPass<
   }
 
   void doWalkModule(Module* module) {
+    float denan_f32;
+    double denan_f64;
     // Pick names for the helper functions.
     deNan32 = Names::getValidFunctionName(*module, "deNan32");
     deNan64 = Names::getValidFunctionName(*module, "deNan64");
@@ -143,8 +165,19 @@ struct DeNaN : public WalkerPass<
         builder.makeConst(literal));
       module->addFunction(std::move(func));
     };
-    add(deNan32, Type::f32, Literal(float(0)), EqFloat32);
-    add(deNan64, Type::f64, Literal(double(0)), EqFloat64);
+    if (is_bigendian()) {
+      std::cout << "big endian\n";
+      memcpy(&denan_f32, f32_bytes_big, sizeof(float));
+      memcpy(&denan_f64, f64_bytes_big, sizeof(double));
+    } else {
+      std::cout << "little endian\n";
+      memcpy(&denan_f32, f32_bytes_lt, sizeof(float));
+      memcpy(&denan_f64, f64_bytes_lt, sizeof(double));
+    }
+    add(deNan32, Type::f32, Literal(denan_f32), EqFloat32);
+    add(deNan64, Type::f64, Literal(denan_f64), EqFloat64);
+//    add(deNan32, Type::f32, Literal(float(0)), EqFloat32);
+//    add(deNan64, Type::f64, Literal(double(0)), EqFloat64);
   }
 };
 
