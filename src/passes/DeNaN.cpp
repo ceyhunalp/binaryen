@@ -66,10 +66,10 @@ struct DeNaN : public WalkerPass<
     if (expr->type == Type::f32) {
       if (c && c->value.isNaN()) {
         if (is_bigendian()) {
-          std::cout << "big endian\n";
+          //std::cout << "big endian\n";
           memcpy(&denan_f32, f32_bytes_big, sizeof(float));
         } else {
-          std::cout << "little endian\n";
+          //std::cout << "little endian\n";
           memcpy(&denan_f32, f32_bytes_lt, sizeof(float));
         }
 //        replacement = builder.makeConst(float(0));
@@ -79,11 +79,11 @@ struct DeNaN : public WalkerPass<
     } else if (expr->type == Type::f64) {
       if (c && c->value.isNaN()) {
         if (is_bigendian()) {
-          std::cout << "big endian\n";
-          memcpy(&denan_f64, f64_bytes_big, sizeof(float));
+          //std::cout << "big endian\n";
+          memcpy(&denan_f64, f64_bytes_big, sizeof(double));
         } else {
-          std::cout << "little endian\n";
-          memcpy(&denan_f64, f64_bytes_lt, sizeof(float));
+          //std::cout << "little endian\n";
+          memcpy(&denan_f64, f64_bytes_lt, sizeof(double));
         }
 //        replacement = builder.makeConst(double(0));
       } else {
@@ -166,11 +166,11 @@ struct DeNaN : public WalkerPass<
       module->addFunction(std::move(func));
     };
     if (is_bigendian()) {
-      std::cout << "big endian\n";
+      //std::cout << "big endian\n";
       memcpy(&denan_f32, f32_bytes_big, sizeof(float));
       memcpy(&denan_f64, f64_bytes_big, sizeof(double));
     } else {
-      std::cout << "little endian\n";
+      //std::cout << "little endian\n";
       memcpy(&denan_f32, f32_bytes_lt, sizeof(float));
       memcpy(&denan_f64, f64_bytes_lt, sizeof(double));
     }

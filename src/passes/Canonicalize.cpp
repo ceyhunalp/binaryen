@@ -72,13 +72,13 @@ struct Canonicalize : public WalkerPass<ControlFlowWalker<Canonicalize, UnifiedE
     };
 
     if (is_bigendian()) {
-      std::cout << "big endian\n";
+      //std::cout << "big endian\n";
       memcpy(&canon_f32, f32_bytes_big, sizeof(float));
       memcpy(&canon_f64, f64_bytes_big, sizeof(double));
 //      canon_f32 = -1;
 //      canon_f64 = -1;
     } else {
-      std::cout << "little endian\n";
+      //std::cout << "little endian\n";
       memcpy(&canon_f32, f32_bytes_lt, sizeof(float));
       memcpy(&canon_f64, f64_bytes_lt, sizeof(double));
 //      canon_f32 = -2;
